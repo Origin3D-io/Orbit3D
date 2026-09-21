@@ -1,0 +1,15 @@
+[tool.ruff]
+target-version = "py310"
+line-length = 100
+extend-exclude = ["build", "dist"]
+extend-include = ["*.FCMacro"]
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F", "I"]
+
+[tool.ruff.lint.per-file-ignores]
+"**/tests/*.py" = ["E402"]
+"**/tests/*.FCMacro" = ["E402"]
+"**/examples/*.py" = ["E402"]
+"FreeCAD/Orbit3D/InitGui.py" = ["F821"]
+"Blender/orbit3d_blender/__init__.py" = ["F722", "F821"]

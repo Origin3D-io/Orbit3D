@@ -1,0 +1,105 @@
+"""Disposable FreeCAD GUI verification. Uses only an unsaved synthetic document."""
+
+import importlib
+import json
+import os
+import sys
+import types
+from pathlib import Path
+
+import FreeCADGui as Gui
+from PySide import QtCore
+
+import FreeCAD as App
+
+root = Path(os.environ["ORBIT_TEST_ROOT"])
+sys.path.insert(0, str(root / "FreeCAD" / "Orbit3D"))
+sys.path.insert(0, str(root / "OrbitHub" / "sdk" / "python" / "src"))
+import orbit3d_bootstrap
+
+orbit3d_bootstrap.controller().stop()
+package = types.ModuleType("orbit3d_gui_camera_test")
+package.__path__ = [str(root / "FreeCAD" / "Orbit3D")]
+sys.modules[package.__name__] = package
+module = importlib.import_module(package.__name__ + ".viewport_driver")
+navigation = importlib.import_module(package.__name__ + ".navigation")
+doc = App.newDocument("Orbit3DCameraVerification")
+box = doc.addObject("Part::Box", "CameraTestBox")
+box.Length = box.Width = box.Height = 20
+doc.recompute()
+view = Gui.activeDocument().activeView()
+view.viewAxonometric()
+view.fitAll()
+driver = module.OrbitViewportDriver()
+driver.active_view = lambda: view
+
+
+def verify():
+    result = {"freecad": App.Version()[:3], "ok": False}
+    try:
+        for kind in ("Orthographic", "Perspective"):
+            view.setCameraType(kind)
+            view.fitAll()
+            driver._orbit_pivot = None
+            Gui.updateGui()
+            camera = view.getCameraNode()
+            before = driver.view_height(camera)
+            driver.apply_motion(navigation.hub.ViewportMotion(ty=100))
+            assert driver.view_height(camera) < before, kind + " zoom did not move"
+            before_position = App.Vector(*camera.position.getValue().getValue())
+            for _ in range(10):
+                driver.apply_motion(navigation.hub.ViewportMotion(tz=1))
+            after_position = App.Vector(*camera.position.getValue().getValue())
+            assert 0 < (after_position - before_position).Length / before < 0.01
+            before_orientation = view.getCameraOrientation()
+            driver._orbit_pivot = None
+            before_position = App.Vector(*camera.position.getValue().getValue())
+            width, height = view.getSize()
+            hit = view.getObjectInfo((width // 2, height // 2))
+            assert hit, "Test box must be visible at screen center"
+            pivot = App.Vector(hit["x"], hit["y"], hit["z"])
+            local = before_orientation.inverted().multVec(pivot - before_position)
+            for step in range(60):
+                driver.apply_motion(navigation.hub.ViewportMotion(ry=120, rx=25, rz=45))
+                Gui.updateGui()
+                after_orientation = view.getCameraOrientation()
+                after_position = App.Vector(*camera.position.getValue().getValue())
+                error = (
+                    after_orientation.inverted().multVec(pivot - after_position) - local
+                ).Length
+                assert error < 0.002, (
+                    kind,
+                    "Pivot moves on screen",
+                    step,
+                    error,
+                    pivot,
+                    driver._orbit_pivot,
+                    after_position,
+                )
+                shown = App.Vector(*driver._pivot_coords.point.getValues()[0].getValue())
+                assert (shown - pivot).Length < 0.002, kind + " Marker does not match surface pivot"
+            assert driver._feedback is not None, "No real-scene pivot marker"
+            for step in range(20):
+                driver.apply_motion(navigation.hub.ViewportMotion(tx=100, tz=50, ry=20))
+                Gui.updateGui()
+                shown = App.Vector(*driver._pivot_coords.point.getValues()[0].getValue())
+                assert (shown - pivot).Length < 0.002, "Pan detached marker from the object"
+            driver.clear_feedback()
+        result["ok"] = True
+        view.setCameraType("Orthographic")
+        view.fitAll()
+        driver.apply_motion(navigation.hub.ViewportMotion(ry=40))
+        Gui.getMainWindow().showNormal()
+        Gui.getMainWindow().raise_()
+    except Exception as exc:
+        result["error"] = repr(exc)
+    output = root / "FreeCAD/build/freecad-gui-camera.json"
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text(json.dumps(result), encoding="utf-8")
+    print("ORBIT_GUI_TEST", result)
+    if os.environ.get("ORBIT_TEST_QUIT") == "1":
+        App.closeDocument(doc.Name)
+        Gui.getMainWindow().close()
+
+
+QtCore.QTimer.singleShot(2500, verify)
