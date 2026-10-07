@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.2.1 — 2026-10-06
 
 - Broker and Python SDK: 0.2.1. Blender addon: 0.2.4. FreeCAD workbench: 0.3.4.
 - FreeCAD selects a surface pivot and keeps its marker attached during pan, zoom, and rotation.

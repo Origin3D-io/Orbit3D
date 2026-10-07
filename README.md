@@ -33,6 +33,12 @@ Integration requires camera control and UI-thread scheduling through a supported
 extension API or native application code.
 See [Application integration](docs/integration.md) for the implementation sequence.
 
+## Downloads
+
+[Download v0.2.1](https://github.com/Origin3D-io/Orbit3D/releases/tag/v0.2.1)
+for the OrbitHub runtime and Blender/FreeCAD addon archives. See
+[Build and run](docs/quickstart.md) for installation and a hardware-free demo.
+
 ## Documentation
 
 | Document | Purpose |

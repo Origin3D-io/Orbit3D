@@ -2,9 +2,14 @@
 
 ## Prebuilt runtime
 
-Completed **SDK tests** runs in the repository's Actions tab include OrbitHub
-archives for Windows, macOS, and Linux. Download the archive matching your OS
-and architecture, then extract it. CI builds are unsigned evaluation binaries.
+Download OrbitHub from the [v0.2.1 release](https://github.com/Origin3D-io/Orbit3D/releases/tag/v0.2.1):
+
+- `orbithub-windows-x64.zip` for Windows x64.
+- `orbithub-macos-arm64.zip` for macOS on Apple Silicon.
+- `orbithub-linux-x64.zip` for Linux x64.
+
+Extract the archive matching your OS and architecture. These are unsigned
+evaluation binaries. The release includes SHA-256 checksums in `SHA256SUMS.txt`.
 
 Run `.\orbithub.exe --simulate` on Windows or `./orbithub --simulate` on
 macOS/Linux. If needed on macOS/Linux, run `chmod +x orbithub`
@@ -50,13 +55,17 @@ alongside the broker. OrbitHub does not read hardware directly.
 
 ## Application addons
 
+Download `Orbit3D-Blender.zip` or `Orbit3D-FreeCAD.zip` from the
+[v0.2.1 release](https://github.com/Origin3D-io/Orbit3D/releases/tag/v0.2.1).
+To build the same archives from source instead:
+
 ```sh
 python Blender/build_addon.py
 python FreeCAD/build_workbench.py
 ```
 
-Install `Blender/dist/Orbit3D-Blender.zip` through Blender's addon manager.
-For FreeCAD, extract `FreeCAD/dist/Orbit3D-FreeCAD.zip` into the active user
+Install `Orbit3D-Blender.zip` through Blender's addon manager.
+For FreeCAD, extract `Orbit3D-FreeCAD.zip` into the active user
 `Mod` directory. FreeCAD's Python console reports the base with
 `App.getUserAppDataDir()`. Restart the application after installing its addon.
 
